@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Spin & Seek: The Cluttered Curiosity Parlor</title>
+  <link rel="stylesheet" href="style.css">
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800&family=Playfair+Display:ital,wght@0,600;1,400&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+</head>
+<body>
+
+  <!-- Top HUD Navigation Bar -->
+  <header class="game-hud">
+    <div class="hud-left">
+      <div class="game-logo">
+        <span class="logo-icon">🎡</span>
+        <div class="logo-text">
+          <h1>SPIN & SEEK</h1>
+          <p>The Cluttered Curiosity Parlor</p>
+        </div>
+      </div>
+
+      <div class="stat-pill">
+        <span class="stat-label">Round:</span>
+        <span class="stat-val" id="hudRound">1</span>
+      </div>
+
+      <div class="stat-pill">
+        <span class="stat-label">Score:</span>
+        <span class="stat-val" id="hudScore">0</span>
+      </div>
+
+      <div class="stat-pill">
+        <span class="stat-label">Streak:</span>
+        <span class="stat-val" id="hudStreak">0</span>
+        <span>🔥</span>
+      </div>
+
+      <!-- Difficulty Selector HUD Pill -->
+      <button class="difficulty-hud-pill" id="btnDifficultySelect" title="Change Difficulty Level">
+        <span id="hudDifficultyIcon">⭐</span>
+        <span id="hudDifficultyLabel">Intermediate</span>
+      </button>
+    </div>
+
+    <!-- Center Target Indicator -->
+    <div class="hud-target" id="hudTarget">
+      <div class="target-word-container" id="targetWordContainer">
+        <div class="target-pattern" id="targetPattern">? • • • ?</div>
+        <span class="letter-count-badge hidden" id="letterCountBadge"></span>
+      </div>
+      <div class="target-prompt" id="targetPrompt">Spin the wheel to begin!</div>
+    </div>
+
+    <!-- Right Controls -->
+    <div class="hud-right">
+      <button class="icon-btn" id="btnHint" title="Reveal another letter or room spotlight">
+        <span>💡</span>
+        <span id="hintBtnText">Hint</span>
+      </button>
+
+      <button class="icon-btn" id="btnRespin" title="Re-spin for a New Challenge">
+        <span>🔄</span>
+        <span>Re-spin</span>
+      </button>
+
+      <button class="icon-btn" id="btnLedger" title="View Discovered Objects Ledger">
+        <span>📖</span>
+        <span>Ledger</span>
+      </button>
+
+      <button class="icon-btn" id="btnMute" title="Toggle Sound">
+        <span>🔊</span>
+      </button>
+
+      <button class="icon-btn" id="btnHelp" title="Game Instructions">
+        <span>❓</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- Crowded Room Viewport -->
+  <main id="roomContainer"></main>
+
+  <!-- Modal: Intro / How to Play -->
+  <div class="modal-overlay" id="modalIntro">
+    <div class="parchment-card">
+      <div class="success-badge">🧭</div>
+      <h2>Welcome to Spin & Seek!</h2>
+      <div class="intro-content">
+        <p>Step inside the eccentric Victorian Curiosity Parlor, packed with <strong>60 hand-crafted curiosities, artifacts, and antiques</strong>.</p>
+        <ol>
+          <li><strong>Spin Wheel 1</strong> to reveal the <em>Starting Letter</em> of your mystery object.</li>
+          <li><strong>Spin Wheel 2</strong> to reveal the <em>Ending Letter</em>.</li>
+          <li><strong>Explore the Crowded Room</strong> by dragging to pan and scrolling to zoom. Spot and click the matching item (e.g. <code>B • • • K</code> &rarr; <em>Book</em>)!</li>
+        </ol>
+      </div>
+
+      <!-- Difficulty Level Selector -->
+      <div class="difficulty-section">
+        <div class="difficulty-title">SELECT DIFFICULTY LEVEL</div>
+        <div class="difficulty-options" id="difficultyOptions">
+          <div class="difficulty-card" data-difficulty="beginner">
+            <div class="diff-icon">🌱</div>
+            <div class="diff-details">
+              <div class="diff-header">
+                <span class="diff-name">Beginner</span>
+                <span class="diff-age">Ages 5+</span>
+              </div>
+              <div class="diff-desc">Short words, gentle room glow & extra letter hints</div>
+            </div>
+            <div class="diff-radio"><span class="radio-check"></span></div>
+          </div>
+
+          <div class="difficulty-card active" data-difficulty="intermediate">
+            <div class="diff-icon">⭐</div>
+            <div class="diff-details">
+              <div class="diff-header">
+                <span class="diff-name">Intermediate</span>
+                <span class="diff-age">Ages 9+</span>
+              </div>
+              <div class="diff-desc">Everyday items, letter counts & progressive letter reveals</div>
+            </div>
+            <div class="diff-radio"><span class="radio-check"></span></div>
+          </div>
+
+          <div class="difficulty-card" data-difficulty="advanced">
+            <div class="diff-icon">🏆</div>
+            <div class="diff-details">
+              <div class="diff-header">
+                <span class="diff-name">Advanced</span>
+                <span class="diff-age">Ages 13+</span>
+              </div>
+              <div class="diff-desc">All 60 curiosities, cryptic antiques & full parlor hunt</div>
+            </div>
+            <div class="diff-radio"><span class="radio-check"></span></div>
+          </div>
+        </div>
+      </div>
+
+      <button class="btn-primary" id="btnStartGame">ENTER THE PARLOR</button>
+    </div>
+  </div>
+
+  <!-- Modal: The Carnival Wheel Overlay -->
+  <div class="modal-overlay hidden" id="wheelOverlay">
+    <div class="wheel-card">
+      <div class="wheel-header">
+        <h2 id="wheelTitle">Spin For Starting Letter!</h2>
+        <p id="wheelSubtitle">Spin the carnival wheel to discover what letter your object begins with.</p>
+      </div>
+
+      <div class="wheel-stage">
+        <canvas id="wheelCanvas" width="380" height="380"></canvas>
+      </div>
+
+      <button class="btn-primary" id="btnSpin">SPIN WHEEL</button>
+    </div>
+  </div>
+
+  <!-- Modal: Round Success / Object Found -->
+  <div class="modal-overlay hidden" id="modalSuccess">
+    <div class="success-card">
+      <div class="success-badge">🎉</div>
+      <h2 id="successTitle">Brilliant Discovery!</h2>
+      <div class="object-reveal" id="successObjectName">Book (B • • • K)</div>
+      <div class="object-hint" id="successObjectHint">"A thick, leather-bound mystery tome lying open on the desk."</div>
+      <div class="score-bonus" id="successScoreBonus">+1,000 Points</div>
+      <button class="btn-primary" id="btnNextRound">NEXT CHALLENGE &rarr;</button>
+    </div>
+  </div>
+
+  <!-- Modal: Curiosity Ledger -->
+  <div class="modal-overlay hidden" id="modalLedger">
+    <div class="parchment-card ledger-modal-card">
+      <div class="ledger-header">
+        <h2>Curiosity Ledger</h2>
+        <p id="ledgerProgress">0 / 60 Discovered</p>
+      </div>
+      <div class="ledger-scroll-area" id="ledgerList">
+        <!-- Dynamically populated -->
+      </div>
+      <div style="margin-top: 20px;">
+        <button class="btn-primary" id="btnCloseLedger">RETURN TO ROOM</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Floating Toast Notification -->
+  <div class="toast hidden" id="toastNotification"></div>
+
+  <!-- Game Scripts -->
+  <script src="room_data.js"></script>
+  <script src="audio.js"></script>
+  <script src="wheel.js"></script>
+  <script src="room.js"></script>
+  <script src="game.js"></script>
+</body>
+</html>
