@@ -25,20 +25,55 @@
   }
 
   function getObjectArea(obj) {
-    const rx = obj.rx || 32;
-    const ry = obj.ry || 32;
-    return rx * ry;
+    const { shape, rx = 32, ry = 32 } = obj;
+    if (shape) {
+      if (shape.type === 'rect' && shape.width && shape.height) {
+        return shape.width * shape.height;
+      }
+      if (shape.type === 'circle' && shape.r) {
+        return Math.PI * shape.r * shape.r;
+      }
+      if (shape.type === 'ellipse' && (shape.rx || rx) && (shape.ry || ry)) {
+        return Math.PI * (shape.rx || rx) * (shape.ry || ry);
+      }
+      const raw = shape.d || shape.points || '';
+      if (raw) {
+        // Compute shoelace polygon area of the primary subpath (or average across subpaths)
+        const subpaths = raw.trim().split(/(?=M)/i).filter(Boolean);
+        let totalArea = 0;
+        for (const sub of subpaths) {
+          const nums = (sub.match(/-?\d+(?:\.\d+)?/g) || []).map(Number);
+          const n = Math.floor(nums.length / 2);
+          if (n >= 3) {
+            let shoelace = 0;
+            for (let i = 0; i < n; i++) {
+              const x1 = nums[i * 2];
+              const y1 = nums[i * 2 + 1];
+              const x2 = nums[((i + 1) % n) * 2];
+              const y2 = nums[((i + 1) % n) * 2 + 1];
+              shoelace += (x1 * y2 - x2 * y1);
+            }
+            totalArea += Math.max(1, Math.abs(shoelace) / 2);
+          }
+        }
+        if (totalArea > 0) {
+          return subpaths.length > 1 ? (totalArea / subpaths.length) : totalArea;
+        }
+      }
+    }
+    return Math.PI * rx * ry;
   }
 
   function getSortedRoomObjects(objects) {
     return objects.slice().sort((a, b) => {
-      // Containers (desk, shelf, bookshelf, armchair, board, chess, rug) go first (bottom of SVG stack)
-      const aContainer = a.isContainer ? 1 : 0;
-      const bContainer = b.isContainer ? 1 : 0;
-      if (aContainer !== bContainer) {
-        return bContainer - aContainer;
+      // 1. Floor (zIndex < 0) and large background containers render behind foreground items
+      const aTier = (typeof a.zIndex === 'number' && a.zIndex < 0) ? -1 : (a.isContainer ? 0 : 1);
+      const bTier = (typeof b.zIndex === 'number' && b.zIndex < 0) ? -1 : (b.isContainer ? 0 : 1);
+      if (aTier !== bTier) {
+        return aTier - bTier;
       }
-      // Larger area objects go behind smaller detail objects
+      // 2. Within each tier, larger objects always go behind smaller objects so that
+      // smaller items contained within (or overlapping) larger items are in the foreground.
       return getObjectArea(b) - getObjectArea(a);
     });
   }
@@ -152,29 +187,27 @@
     }
 
     /**
-     * Restores natural area-sorted z-order, then promotes active round targets
-     * to the top of the SVG stack so hovering/clicking the target always hits its exact outline.
+     * Marks active round targets while preserving natural back-to-front z-order
+     * so an object is only hovered/outlined when the cursor is over its visible,
+     * non-occluded portion.
      */
     setActiveTargets(targetObjects = [], primaryTarget = null) {
       if (!this.objectsLayer) return;
 
-      // Restore base area-sorted order first
       this._initialOrder.forEach(el => {
         el.classList.remove('active-target');
-        this.objectsLayer.appendChild(el);
       });
 
-      const toPromote = [...targetObjects];
-      if (primaryTarget && !toPromote.includes(primaryTarget)) {
-        toPromote.push(primaryTarget);
+      const toMark = [...targetObjects];
+      if (primaryTarget && !toMark.includes(primaryTarget)) {
+        toMark.push(primaryTarget);
       }
 
-      toPromote.forEach(obj => {
+      toMark.forEach(obj => {
         if (!obj) return;
         const el = this.objectsLayer.querySelector(`.room-object[data-id="${obj.id}"]`);
         if (el) {
           el.classList.add('active-target');
-          this.objectsLayer.appendChild(el);
         }
       });
     }

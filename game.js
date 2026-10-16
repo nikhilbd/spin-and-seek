@@ -16,6 +16,7 @@
       this.primaryTarget = null;
       this.revealedIndices = new Set();
       this.discoveredIds = new Set();
+      this.sessionUsedIds = new Set();
 
       // Stats
       this.score = 0;
@@ -306,15 +307,26 @@
       this.wheel.resize();
     }
 
+    _getUnplayedPool() {
+      const pool = window.ROOM_DATA.getObjectsForDifficulty(this.difficulty);
+      let unplayed = pool.filter(o => !this.sessionUsedIds.has(o.id));
+      if (unplayed.length === 0) {
+        this.sessionUsedIds.clear();
+        unplayed = pool;
+      }
+      return unplayed;
+    }
+
     executeFirstSpin() {
       this.state = 'SPINNING_1';
       this.dom.btnSpin.disabled = false;
       this.dom.btnSpin.textContent = 'FAST-FORWARD ⏩';
 
-      // Pick a random starting letter from available objects in the chosen difficulty
-      const pool = window.ROOM_DATA.getObjectsForDifficulty(this.difficulty);
-      const availableStartingLetters = Array.from(new Set(pool.map(o => o.firstLetter)));
-      const chosenFirst = availableStartingLetters[Math.floor(Math.random() * availableStartingLetters.length)];
+      // Pick a random unplayed target from the difficulty pool so no word repeats in a session
+      const unplayedPool = this._getUnplayedPool();
+      const chosenObj = unplayedPool[Math.floor(Math.random() * unplayedPool.length)];
+      this._pendingSessionTarget = chosenObj;
+      const chosenFirst = chosenObj.firstLetter;
 
       this.wheel.spinTo(chosenFirst, (landedLetter) => {
         this.firstLetter = landedLetter;
@@ -326,8 +338,11 @@
         this.dom.btnSpin.textContent = 'SPIN ENDING LETTER';
         this.dom.btnSpin.disabled = false;
 
-        // Highlight valid ending letters on the wheel for this difficulty
-        const validLasts = window.ROOM_DATA.getValidLastLetters(this.firstLetter, this.difficulty);
+        // Highlight valid ending letters among unplayed objects for this starting letter
+        const unplayedForFirst = this._getUnplayedPool().filter(o => o.firstLetter === this.firstLetter);
+        const validLasts = unplayedForFirst.length > 0
+          ? Array.from(new Set(unplayedForFirst.map(o => o.lastLetter))).sort()
+          : window.ROOM_DATA.getValidLastLetters(this.firstLetter, this.difficulty);
         this.wheel.setHighlightedLetters(validLasts);
       });
     }
@@ -337,8 +352,19 @@
       this.dom.btnSpin.disabled = false;
       this.dom.btnSpin.textContent = 'FAST-FORWARD ⏩';
 
-      const validLasts = window.ROOM_DATA.getValidLastLetters(this.firstLetter, this.difficulty);
-      const chosenLast = validLasts[Math.floor(Math.random() * validLasts.length)];
+      const unplayedForFirst = this._getUnplayedPool().filter(o => o.firstLetter === this.firstLetter);
+      const chosenTarget = (this._pendingSessionTarget &&
+        this._pendingSessionTarget.firstLetter === this.firstLetter &&
+        !this.sessionUsedIds.has(this._pendingSessionTarget.id))
+        ? this._pendingSessionTarget
+        : (unplayedForFirst.length > 0
+            ? unplayedForFirst[Math.floor(Math.random() * unplayedForFirst.length)]
+            : window.ROOM_DATA.findMatchingObjects(
+                this.firstLetter,
+                window.ROOM_DATA.getValidLastLetters(this.firstLetter, this.difficulty)[0],
+                this.difficulty
+              )[0]);
+      const chosenLast = chosenTarget.lastLetter;
 
       this.wheel.spinTo(chosenLast, (landedLetter) => {
         this.lastLetter = landedLetter;
@@ -346,8 +372,13 @@
         this.dom.btnSpin.textContent = `LANDED ON ${this.lastLetter}!`;
         this.targetObjects = window.ROOM_DATA.findMatchingObjects(this.firstLetter, this.lastLetter, this.difficulty);
 
-        // Select a primary target object for this round
-        this.primaryTarget = this.targetObjects[Math.floor(Math.random() * this.targetObjects.length)];
+        // Select the unplayed target for this round and record it in sessionUsedIds immediately
+        const unplayedMatches = this.targetObjects.filter(o => !this.sessionUsedIds.has(o.id));
+        this.primaryTarget = unplayedMatches.find(o => o.id === chosenTarget.id)
+          || unplayedMatches[0]
+          || this.targetObjects[0];
+        this.sessionUsedIds.add(this.primaryTarget.id);
+        this._pendingSessionTarget = null;
 
         // Initialize revealed indices: first letter (0) and last letter (length - 1)
         this.revealedIndices = new Set([0, this.primaryTarget.name.length - 1]);

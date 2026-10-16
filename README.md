@@ -19,11 +19,12 @@ An interactive letter-wheel hidden-object word discovery web game set in an anti
 
 ## Key Features
 
-- **Photorealistic Visual Atmosphere**: High-resolution 16:9 photographic study (`curiosity_parlor.jpg`) featuring 60 concrete, 1-to-1 interactive curiosities with custom hit geometries and golden magnifying lens hover outlines.
+- **Photorealistic Visual Atmosphere**: High-resolution 16:9 photographic study (`curiosity_parlor.jpg`) featuring 57 concrete, 1-to-1 interactive curiosities with custom hit geometries and golden magnifying lens hover outlines.
 - **Three-Tier Difficulty Selector**:
-  - **Beginner (Ages ~5)**: 43 common, short concrete objects. 4+ letter words reveal their second letter immediately. Targets gently pulse with a warm golden sparkle. Hints incur zero score penalty.
-  - **Intermediate (Ages ~9)**: 55 objects spanning richer vocabulary with standard first-and-last letter reveals and progressive hints.
-  - **Advanced (Ages 13+)**: All 60 objects, including vintage instruments and curiosity relics. Strict first-and-last reveals and high scoring stakes.
+  - **Beginner (Ages ~5)**: 42 common, short concrete objects. 4+ letter words reveal their second letter immediately. Targets gently pulse with a warm golden sparkle. Hints incur zero score penalty.
+  - **Intermediate (Ages ~9)**: 53 objects spanning richer vocabulary with standard first-and-last letter reveals and progressive hints.
+  - **Advanced (Ages 13+)**: All 57 objects, including vintage instruments and curiosity relics. Strict first-and-last reveals and high scoring stakes.
+- **Session Word Uniqueness**: Tracks objects played during the active session (`sessionUsedIds`) so no word is repeated until the entire pool for the selected difficulty has been exhausted.
 - **Guaranteed Solvability Engine**: The dictionary engine filters the second wheel's segments based on the first wheel's outcome, preventing impossible letter pairs or dead ends.
 - **Procedural Web Audio API Sound Effects**: Synthesizes mechanical wheel tick clicks, wheel stop thuds, brass victory fanfares, gentle error bonks, and mystical hint shimmers with zero external audio files.
 - **Responsive Viewport Navigation**: Smooth drag-to-pan, mouse wheel zoom-to-cursor, pinch-to-zoom on touch devices, and dedicated HUD zoom controls (+, −, ⛶).
@@ -61,7 +62,7 @@ An interactive letter-wheel hidden-object word discovery web game set in an anti
 | :--- | :--- |
 | `index.html` | Application shell, accessibility attributes, HUD overlays, difficulty picker modal, ledger modal, and celebration dialogs. |
 | `style.css` | Victorian curiosity visual theme, typography, layout, animations (`letterPop`, `beginnerSparklePulse`, `hotspotGlow`), and responsive breakpoints. |
-| `room_data.js` | Authoritative object catalog (60 concrete 1-to-1 items) containing coordinates, category, difficulty tier, descriptive hints, and solvability query functions. |
+| `room_data.js` | Authoritative object catalog (57 concrete 1-to-1 items) containing coordinates, category, difficulty tier, descriptive hints, and solvability query functions. |
 | `room.js` | Viewport renderer, image background loader, interactive SVG hotspot overlays, zoom/pan transforms, particle explosion effects, and hint radar spotlight. |
 | `wheel.js` | High-DPI HTML5 Canvas spinning wheel with physics-driven rotational deceleration, flapper spring deflection, sound triggers, and segment angle math. |
 | `audio.js` | Procedural sound synthesizer using the Web Audio API (`AudioContext`, `OscillatorNode`, `GainNode`, and `BiquadFilterNode`). |
@@ -75,12 +76,12 @@ An interactive letter-wheel hidden-object word discovery web game set in an anti
 
 | Dimension | Beginner (Ages ~5) | Intermediate (Ages ~9) | Advanced (Ages 13+) |
 | :--- | :--- | :--- | :--- |
-| **Object Pool Size** | 43 items | 55 items | 60 items |
-| **Word Length** | 3 to 9 letters | 3 to 10 letters | 3 to 10 letters |
+| **Object Pool Size** | 42 items | 53 items | 57 items |
+| **Word Length** | 3 to 10 letters | 3 to 10 letters | 3 to 10 letters |
 | **Initial Letter Slots** | First & Last revealed. For 4+ letter words, 2nd letter revealed immediately (e.g., `B O _ K`). | First & Last revealed (e.g., `B _ _ K`). | First & Last revealed (e.g., `B _ _ K`). |
 | **Visual Assistance** | Active target object gently sparkles with a golden pulse. | Standard hover lens outline only. | Standard hover lens outline only. |
 | **Hint Cost** | 0 points penalty. | −150 points per hint. | −250 points per hint. |
-| **Example Words** | `APPLE`, `BOOK`, `BELL`, `CUP`, `PEN`, `RUG`, `TRAIN`, `KEY` | `ARMCHAIR`, `COMPASS`, `LANTERN`, `KNIGHT`, `TELESCOPE`, `TYPEWRITER` | `CHANDELIER`, `FLASK`, `PENDULUM`, `SAUCER`, `VOLUME` |
+| **Example Words** | `APPLE`, `BOOK`, `BELL`, `CUP`, `PEN`, `RUG`, `TRAIN`, `KEY` | `ARMCHAIR`, `COMPASS`, `LANTERN`, `KNIGHT`, `TELESCOPE`, `TYPEWRITER` | `CHANDELIER`, `FLASK`, `PENDULUM`, `SAUCER` |
 
 ---
 
@@ -100,9 +101,9 @@ To prevent players from spinning a letter pair with zero matching room items, th
    ```
 3. **Phase 3 (Target Word Selection & Hit Resolution)**:
    - The game selects a primary target from `ROOM_DATA.findMatchingObjects(L1, L2, difficulty)`.
-   - Each of the 60 curiosities defines an explicit SVG silhouette outline (`path`, `polygon`, `circle`, `ellipse`, or `rect`) calibrated to the `1376×768` photographic scene.
-   - Large container furniture (`desk`, `shelf`, `armchair`, `board`, `rug`) is sorted to the bottom of the SVG layer, smaller items are layered on top by bounding-box area, and the active round's non-container target is promoted to the top of the SVG stack so its silhouette is never occluded.
-   - If a player clicks a reasonable visual cousin or sub-part defined in `acceptedGroups` (e.g., clicking a chess piece when the target is `Board`, or clicking either chair for `Chair`), it completes the round.
+   - Each of the 57 curiosities defines an explicit SVG silhouette outline (`path`, `polygon`, `circle`, `ellipse`, or `rect`) calibrated to the `1376×768` photographic scene.
+   - Large container furniture (`desk`, `shelf`, `armchair`, `chessboard`, `rug`) is sorted to the bottom of the SVG layer, and foreground items are layered strictly from largest to smallest by geometric polygon shoelace area so smaller items contained within (or overlapping) larger items are always in the foreground.
+   - If a player clicks a reasonable visual cousin or sub-part defined in `acceptedGroups` (e.g., clicking a chess piece when the target is `Chessboard`, or clicking either chair for `Chair`), it completes the round.
 
 ---
 
@@ -126,13 +127,13 @@ Expected output:
 ```
 --- Testing Room Data Integrity ---
 ✅ PASS: ROOM_OBJECTS is an array
-✅ PASS: ROOM_OBJECTS has at least 50 distinct physical objects (found 60)
+✅ PASS: ROOM_OBJECTS has at least 50 distinct physical objects (found 57)
 ...
 --- Testing Alphabet Coverage (A-Z) ---
 ...
 --- Testing Difficulty Level Engine ---
 ...
-🎉 All tests passed successfully! Total objects: 60
+🎉 All tests passed successfully! Total objects: 57
 ```
 
 #### What `test_room_data.js` Verifies
@@ -159,7 +160,7 @@ Whenever modifying gameplay, room geometry, or object definitions, perform real-
      - Verify only the first and last letters are initially revealed along with the `N Letters` count badge.
      - Verify clicking **Hint** reveals unrevealed inner letters one at a time (`-150` pts) before triggering the radar spotlight.
    - **Advanced (Ages 13+)**:
-     - Verify the full 60-curiosity pool (including `Chandelier`, `Flask`, `Pendulum`, `Saucer`, `Volume`) is active and solvable (`-250` pts per hint).
+     - Verify the full 57-curiosity pool (including `Chandelier`, `Flask`, `Pendulum`, `Saucer`) is active and solvable (`-250` pts per hint).
 
 ### 3. Object Selection & Ambiguity Rules
 
@@ -168,18 +169,19 @@ When adding or reviewing objects in `room_data.js`, check every item against the
 1. **Actual Objects Only (No Materials)**:
    - Ask: *"Is this word a discrete object, or is it a material/substance that many things in the room are made of?"*
    - Reject materials like `Wood` (desk, chairs, shelves, violin, clock, and chess pieces are all wood), `Glass` (window, bottles, jars, lamp shades, magnifier, and hourglasses are all glass), `Gold` (watch, chain, compass, bell, telescope, chandelier are all gold/brass), `Paper`, `Sand`, and `Ink`.
-2. **Minimal Overlap on Screen**:
-   - Adjacent SVG outlines (`shape.d` / `shape.points`) must not overlap each other.
-   - Large furniture targets (`Desk`, `Shelf`, `Armchair`, `Board`, `Rug`) must have their SVG paths carved around foreground items so hovering a small object never accidentally highlights a background container, and hovering across the room produces zero occlusions (`document.elementFromPoint(x, y)` at every object's center `(x, y)` must resolve to that exact object).
+2. **Natural Full Outlines with Non-Occluded Hover Layering**:
+   - Every object's SVG outline (`shape.d` / `shape.points`) traces its **complete, natural contour** (including parts partially behind foreground objects, such as the full `Rug` under the chair, the full `Armchair` behind the pillow and yarn, the full `Chessboard` under the chess pieces, and the full `Globe` behind the umbrella handle) without artificial "bite mark" cutouts.
+   - Hit-testing in `room.js` preserves strict back-to-front container tier and geometric polygon shoelace area stacking order (`getSortedRoomObjects`) so smaller items sit in the foreground of any larger items containing them, and an object is hovered and outlined **only when the cursor is over a visible, non-occluded portion** of that object (`document.elementFromPoint(x, y)` at every object's visible anchor `(x, y)` resolves to that exact object).
 3. **Multi-Instance Visual Consistency**:
-   - If the room artwork depicts two instances of the same object type, the SVG path or `acceptedGroups` must cover **both** so the player is never penalized for clicking the "other" visible instance:
+   - If the room artwork depicts multiple instances of the same object type, the SVG path or `acceptedGroups` must cover **all of them** so the player is never penalized for clicking or hovering another visible instance:
+     - **Binoculars**: All three pairs of brass binoculars — the standing field binoculars on the desk (`x: 1212, y: 595`), the brass binoculars on the upper shelf (`x: 1058, y: 372`), and the binoculars in the desk cubbyhole (`x: 1205, y: 500`).
      - **Lamp**: Both the right desk Tiffany lamp (`x: 1310, y: 240`) and the left window Tiffany lamp (`x: 204, y: 318`), plus `lantern`/`chandelier` in `acceptedGroups`.
      - **Clock**: Both the grandfather clock (`x: 418, y: 222`) and the small window mantel clock (`x: 288, y: 312`).
      - **Hourglass**: Both the desk hourglass (`x: 1086, y: 554`) and the upper shelf hourglass (`x: 996, y: 316`).
-     - **Binoculars**: Both the right desk binoculars (`x: 1212, y: 595`) and the shelf binoculars (`x: 1042, y: 356`).
-     - **Ruler**: Both wooden measuring rulers on the desk ledge (`x: 788, y: 389` and `x: 1180, y: 407`).
+     - **Rook**: Both corner castle rooks on the chessboard (`x: 168, y: 610` and `x: 253, y: 662`).
+     - **Pawn**: Individual boxes for the 7 wooden chess pawns across the chessboard.
      - **Frame**: Both upper and lower framed botanical prints on the left wall (`x: 58, y: 96` and `x: 70, y: 257`).
-     - **Cross-Group Cousins (`acceptedGroups`)**: Clicking either chair counts for `Chair` or `Armchair`; clicking shelf volumes counts for `Book`; clicking any top-shelf apothecary vessel (`Flask`, `Bottle`, `Jar`) counts for any of the three; clicking any chess piece counts for `Board`.
+     - **Cross-Group Cousins (`acceptedGroups`)**: Clicking either chair counts for `Chair` or `Armchair`; clicking shelf volumes counts for `Book`; clicking any top-shelf apothecary vessel (`Flask`, `Bottle`, `Jar`) counts for any of the three; clicking any chess piece counts for `Chessboard`.
 
 ### 4. Visual Outline, Visibility & Human UX Checklist
 
